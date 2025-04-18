@@ -1,0 +1,16 @@
+key,type,encoding,value
+dev_conf,namespace,,
+model,data,string,"RMS_v1.0"
+serial,data,string,"0000000000"
+net_conf,namespace,,
+sntp_url,data,string,"pool.ntp.org"
+sntp_interval,data,i32,3600
+mqtt_uri,data,string,"mqtt://mqtt.thingsboard.cloud:1883"
+mqtt_username,data,string,"orb123"
+mqtt_password,data,string,"1234567890"
+mqtt_keepalive,data,i16,15
+mqtt_timeout,data,i16,1000
+mqtt_qos,data,i8,1
+ppp_apn,data,string,"www"
+ppp_username,data,string,""
+ppp_password,data,string,""
