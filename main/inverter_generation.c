@@ -115,6 +115,18 @@ extern date_time_t datetime;
 
 const int uart_num = ECHO_UART_PORT;
 
+extern void get_frequency(const int port);
+extern void get_phase_voltage(const int port);
+extern void get_phase_current(const int port);
+extern void get_phase_to_phase_voltage(const int port);
+extern void get_power_factor(const int port);
+extern void get_active_power(const int port);
+extern void get_active_import(const int port);
+extern void get_active_export(const int port);
+extern void get_active_total(const int port);
+extern void all_reg_data(const int port);
+
+
 static mb_param_request_t request12;
 // void init_uart();
 void inv_task();
@@ -141,8 +153,11 @@ extern int get_solis_inverter_data_at_onetime(uint8_t id, uint16_t reg_add,uint1
 
 extern esp_err_t get_growatt_inverter_serial_number(uint8_t id, uint16_t reg_add,uint16_t reg_len);
 extern int get_growatt_inverter_data_at_onetime(uint8_t id, uint16_t reg_add,uint16_t reg_len,uint8_t reg_type);
-
+extern int get_EMS_meter_readings(uint16_t reg_add,uint16_t reg_len);
 extern void inverter_control(char *INV_CONTROL);
+
+uint16_t crc_fun(unsigned char *nData, uint16_t wLength);
+void echo_send(const int port, uint8_t *data, uint8_t length);
 
 static const uint16_t wCRCTable[] = {
 0X0000, 0XC0C1, 0XC181, 0X0140, 0XC301, 0X03C0, 0X0280, 0XC241,
@@ -194,7 +209,7 @@ uint16_t wCRCWord = 0xFFFF;
 
 }
 
-static void echo_send(const int port, uint8_t *data, uint8_t length)
+void echo_send(const int port, uint8_t *data, uint8_t length)
 {
     if (uart_write_bytes(port, (const char *)data, length) != length) {
         ESP_LOGE(TAG10, "Send data critical failure.");
@@ -203,27 +218,27 @@ static void echo_send(const int port, uint8_t *data, uint8_t length)
     }
 }
 
-float convert_data(uint32_t array){
-    int var = 0;
-    float v1 = 0;
-    // printf("array=%lx\n",array);
-    for (int i = 0; i < 9; i++){
-        if(((array>>(i+23))&1) == 1){
-            var = (var + pow(2,i));
-        }
-    }
-    for(int i = 0; i<23; i++){
-        if(((array>>(23-i)&1)== 1)){
-            v1 = (v1 + (1/(pow(2,i))));
-        }
-    }
-    var = var -127;
-    v1 = (1+v1);
-    avrage_value = v1 *(pow(2,var));
-    // printf("avrage_value=%.2f\n",avrage_value);
-    v1 =0;var = 0;
-    return avrage_value;
-}
+// float convert_data(uint32_t array){
+//     int var = 0;
+//     float v1 = 0;
+//     // printf("array=%lx\n",array);
+//     for (int i = 0; i < 9; i++){
+//         if(((array>>(i+23))&1) == 1){
+//             var = (var + pow(2,i));
+//         }
+//     }
+//     for(int i = 0; i<23; i++){
+//         if(((array>>(23-i)&1)== 1)){
+//             v1 = (v1 + (1/(pow(2,i))));
+//         }
+//     }
+//     var = var -127;
+//     v1 = (1+v1);
+//     avrage_value = v1 *(pow(2,var));
+//     // printf("avrage_value=%.2f\n",avrage_value);
+//     v1 =0;var = 0;
+//     return avrage_value;
+// }
 
 void control_CMD1(const int port,uint8_t id,uint8_t fcode, uint16_t reg_add,uint16_t wreg)
 {
@@ -768,7 +783,32 @@ void inv_task(){
                 #if (MODE_SCHNE_CL20_3P)
                 #endif
                 #if (EMS)
-                get_ems_energymeter_data(numOfEnergyMeter); 
+                // for(int i =0; i<5; i++){
+                    printf("EMS meter1\n");
+                    get_frequency(uart_num);
+                    if(got_response == TRUE){
+                        // get_phase_voltage(uart_num);
+                        // get_phase_current(uart_num);
+                        // get_phase_to_phase_voltage(uart_num);
+                        // get_power_factor(uart_num);
+                        // get_active_power(uart_num);
+                        // get_active_import(uart_num);
+                        // get_active_export(uart_num);
+                        // get_active_total(uart_num);
+                        all_reg_data(uart_num);
+                        got_response =  FALSE;
+                    }
+                    // get_phase_voltage(uart_num);
+                    // get_phase_current(uart_num);
+                    // get_phase_to_phase_voltage(uart_num);
+                    // get_power_factor(uart_num);
+                    // get_active_power(uart_num);
+                    // get_active_import(uart_num);
+                    // get_active_export(uart_num);
+                    // get_active_total(uart_num);
+                    // get_EMS_meter_readings(0x0001,0x0002); 
+                    printf("EMS meter2\n"); 
+                // }                
                 #endif
                 #if(TESTING )
                 testing();

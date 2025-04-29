@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/DELL/vs_esp/mb_master/managed_components/espressif__esp-modbus
+# Install script for directory: C:/Users/DELL/vs_esp/RMS_WiFi_Modbus_software_version1/managed_components/espressif__esp-modbus
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

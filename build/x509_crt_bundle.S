@@ -1,4 +1,4 @@
-/* * Data converted from C:/Users/DELL/vs_esp/mb_master/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from C:/Users/DELL/vs_esp/RMS_WiFi_Modbus_software_version1/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 .section .rodata.embedded

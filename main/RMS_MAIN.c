@@ -98,6 +98,11 @@ int32_t rssi = 0;
 uint8_t sync_done = FALSE;
 
 
+extern float Rphase_V,Yphase_V,Bphase_V,Rphase_C,Yphase_C,Bphase_C,Rphase_Yphase_V,Yphase_Bphase_V,Bphase_Rphase_V,PF_R,PF_Y,PF_B,TPF,ACT_P_R,ACT_P_Y,ACT_P_B,TACT_P,active_import,active_export,active_total;
+extern float frequency;
+extern uint8_t dev_id;
+extern char ems_data1[1000];
+
 extern void init_datalogger();
 extern void get_sntp_conf(sntp_conf_t *p);
 extern void get_ppp_conf(ppp_conf_t *p);
@@ -111,6 +116,7 @@ extern esp_err_t send_config_status(char *msg);
 uint8_t count;
 extern void init_ota(void);
 esp_err_t _http_event_handler(esp_http_client_event_t *evt);
+esp_err_t send_meas_data1(char *msg);
 
 // MQTT details
 
@@ -150,7 +156,7 @@ uint8_t MQ_status =DISCONNECTED;
 extern unsigned int gframe, mframe,year, month, date, hour, minute,second; //Frame varaible for giving command
 extern char serialno[50], mload, mresult, SIM_ID[30],IMEI[22], date_time[30], version[5],mresult1;
 extern unsigned int systemcount, supply_voltage, inv_switch, maxsyscount; //
-extern double bvol,fault_code,acpower, pv1vol, pv2vol, pvdcw, acvolt1, acvolt2, acvolt3, acvoltage, accurrent, watthours, wattage, accur1, accur2, accur3, pv1cur, pv2cur, frequency, invtemp, ambtemp, maxtemp, runtime;
+// extern double bvol,fault_code,acpower, pv1vol, pv2vol, pvdcw, acvolt1, acvolt2, acvolt3, acvoltage, accurrent, watthours, wattage, accur1, accur2, accur3, pv1cur, pv2cur, invtemp, ambtemp, maxtemp, runtime;
 extern char software_version[10];
 extern unsigned int  adcresult, inverror, invwar, invfalt, fanfalt, strnfalt,status,id;
 extern long double life_energy, today_energy;	
@@ -392,6 +398,8 @@ void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event
         ESP_LOGI(TAG6, "MQTT_EVENT_CONNECTED");
         mqtt_status = CONNECTED;
         MQ_status = CONNECTED;
+        // sprintf(ems_data1,"\"MACID\":\"%s\",\"RSignal\":\"%d\",\"ID\":\"%d\",\"frequency\":\"%.2f\",\"Rphase_V\":\"%.2f\",\"Yphase_V\":\"%.2f\",\"Bphase_V\":\"%.2f\",\"Rphase_C\":\"%.2f\",\"Yphase_C\":\"%.2f\",\"Bphase_C\":\"%.2f\",\"Rphase_Yphase_V\":\"%.2f\",\"Yphase_Bphase_V\":\"%.2f\",\"Bphase_Rphase_V\":\"%.2f\",\"PF_R\":\"%.2f\",\"PF_Y\":\"%.2f\",\"PF_B\":\"%.2f\",\"TPF\":\"%.2f\",\"ACT_P_R\":\"%.2f\",\"ACT_P_Y\":\"%.2f\",\"ACT_P_B\":\"%.2f\",\"TACT_P\":\"%.2f\",\"active_import\": \"%.2f\", \"active_export\": \"%.2f\", \"active_total\": \"%.2f\"",dev_mac,rssi,dev_id,frequency,Rphase_V,Yphase_V,Bphase_V,Rphase_C,Yphase_C,Bphase_C,Rphase_Yphase_V,Yphase_Bphase_V,Bphase_Rphase_V,PF_R,PF_Y,PF_B,TPF,ACT_P_R,ACT_P_Y,ACT_P_B,TACT_P,active_import,active_export,active_total);
+        // send_meas_data1(ems_data1);
         msg_id = esp_mqtt_client_subscribe(client, mqttSubTopic, 0);
         ESP_LOGI(TAG6, "Sent subscribe successful, msg_id=%d  mqttSubTopic = %s\n", msg_id,mqttSubTopic);
         xEventGroupSetBits(event_group, MQTT_CONNECT_BIT);
@@ -449,15 +457,18 @@ void init_mqtt () {
     
     /* Config MQTT */
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-    // esp_mqtt_client_config_t mqtt_config = {
-    //     .broker.address.uri = "mqtt://mqtt.thingsboard.cloud:1883",
-    //     .credentials.client_id="orbenergy",
-    //     .credentials.username = "orb123",
-    //     .credentials.authentication.password = "1234567890",
-    //     .network.reconnect_timeout_ms = 1000,
-    //     .network.disable_auto_reconnect = MQTT_DISABLE_AUTO_RECON,
-    //     .session.keepalive = 1
-    // };
+    #if(EMS)
+        esp_mqtt_client_config_t mqtt_config = {
+        .broker.address.uri = "mqtt://mqtt.thingsboard.cloud:1883",
+        .credentials.client_id="venu1",
+        .credentials.username = "venu",
+        .credentials.authentication.password = "123456",
+        .network.reconnect_timeout_ms = 1000,
+        .network.disable_auto_reconnect = false,
+        .network.timeout_ms = 1000,
+        .session.keepalive = 60
+    };
+    #else
         esp_mqtt_client_config_t mqtt_config = {
         .broker.address.uri = "mqtt://13.60.190.6:1883",
         // .credentials.client_id="",
@@ -467,7 +478,7 @@ void init_mqtt () {
         .network.disable_auto_reconnect = MQTT_DISABLE_AUTO_RECON,
         .session.keepalive = 15
     };
-
+    #endif
 
 #else
     esp_mqtt_client_config_t mqtt_config = {
@@ -754,7 +765,9 @@ void bootup_init(){
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     //hook isr handler for specific gpio pin
     gpio_isr_handler_add(SW1, gpio_isr_handler, (void*) SW1);
+
     ESP_ERROR_CHECK(modbus_master_init());
+    
     // init_uart();
     // ESP_ERROR_CHECK(nvs_flash_init());
     // factory_flash_config();
@@ -827,7 +840,7 @@ void app_main(void)
             // strftime(buffer, sizeof(buffer), "%d/%m/%Y %H:%M:%S", timeinfo);       
         }
     // }        
-    init_mqtt();
+    init_mqtt();// commented for ems testing once it complete un comment this line
     // xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
     boardReady = true;
     printf("sntp...start..............9\n");
@@ -896,3 +909,30 @@ esp_err_t send_ACK(char *msg){
 //     }
 //     return ret;
 // }
+
+
+esp_err_t send_meas_data1(char *msg) {
+    // char msg[1000];
+    int ret = ESP_ERR_INVALID_STATE;
+    char mqttPubTopic[30];
+    if (mqtt_status == DISCONNECTED){
+        esp_mqtt_client_reconnect(mqtt_client);
+    }
+    if (boardReady) {
+    //     sprintf(mqttPubTopic, "%s/%s", mqttTopic, MQTT_PUB_DATA);
+        // ret = esp_mqtt_client_enqueue(mqtt_client, mqttPubTopic, msg, 0, MQTT_QOS, MQTT_MSG_RETAIN, MQTT_MSG_STORE);
+        // sprintf(msg,"{\"RDate\":\"1-1-1 1:1\",\"RVolt\":\"1\",\"RIMAID\":\"1\",\"RSignal\":\"1\",\"ISth\":\"1\",\"ID\":\"1\",\"InvSlno\":\"0123456789\",\"MPPT1_DCV\":\"11\",\"MPPT1_DCA\":\"1\",\"MPPT2_DCV\":\"1\",\"MPPT2_DCA\":\"1\",\"Ph1ACV\":\"1\",\"Ph1ACA\":\"1\",\"Ph2ACV\":\"1\",\"Ph2ACA\":\"1\",\"Ph3ACV\":\"1\",\"Ph3ACA\":\"1\",\"InvAC_P\":\"1\",\"Inv_Fr\":\"1\",\"Inv_Wh\":\"1\",\"Inv_Nrg\":\"1\",\"Inv_Rt\":\"1\",\"Inv_LE\":\"1\",\"Inv_Sts\":\"1\",\"Inv_Tpr\":\"1\",\"Inv_Err\":\"1\",\"Inv_Wrn\":\"2\",\"Inv_Fnflt\":\"2\",\"Inv_StFlt\":\"1\"}");
+        // sprintf(ems_data1,"\"MACID\":\"%s\",\"RSignal\":\"%d\",\"ID\":\"%d\",\"frequency\":\"%.2f\",\"Rphase_V\":\"%.2f\",\"Yphase_V\":\"%.2f\",\"Bphase_V\":\"%.2f\",\"Rphase_C\":\"%.2f\",\"Yphase_C\":\"%.2f\",\"Bphase_C\":\"%.2f\",\"Rphase_Yphase_V\":\"%.2f\",\"Yphase_Bphase_V\":\"%.2f\",\"Bphase_Rphase_V\":\"%.2f\",\"PF_R\":\"%.2f\",\"PF_Y\":\"%.2f\",\"PF_B\":\"%.2f\",\"TPF\":\"%.2f\",\"ACT_P_R\":\"%.2f\",\"ACT_P_Y\":\"%.2f\",\"ACT_P_B\":\"%.2f\",\"TACT_P\":\"%.2f\",\"active_import\": \"%.2f\", \"active_export\": \"%.2f\", \"active_total\": \"%.2f\"",dev_mac,rssi,dev_id,frequency,Rphase_V,Yphase_V,Bphase_V,Rphase_C,Yphase_C,Bphase_C,Rphase_Yphase_V,Yphase_Bphase_V,Bphase_Rphase_V,PF_R,PF_Y,PF_B,TPF,ACT_P_R,ACT_P_Y,ACT_P_B,TACT_P,active_import,active_export,active_total);
+        // ret = esp_mqtt_client_publish(mqtt_client, "v1/devices/me/telemetry", ems_data1, 0, MQTT_QOS, MQTT_MSG_RETAIN);
+        ret = esp_mqtt_client_publish(mqtt_client, "v1/devices/me/telemetry", msg, 0, MQTT_QOS, MQTT_MSG_RETAIN);
+        printf("ret value = 0x%X   data =%s",ret,msg);
+        if(ret == ESP_OK){
+            ESP_LOGI(TAG6, "MQTT_EVENT_PUBLISHED");
+            // set_led_indication(GREEN_LED_ON);
+        }
+        if (ret == ESP_FAIL) {
+            ESP_LOGI(TAG6, "Message not enqued -> dropped!");
+        }
+    }
+    return ret;
+}

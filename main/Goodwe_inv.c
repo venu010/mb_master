@@ -973,7 +973,8 @@ int get_greater_100kwp_goodwe_inverter_data(uint8_t id, uint16_t reg_add,uint16_
             printf("\n\n\n0.Rdate = %u-%u-%u %u:%u\n1.RVolt = 0\n2.RIMAID = %s\n3.RSignal = %d\n4.ISth = 0\n5.ID = %d\n6.InvSlno = 0%s\n7.MPPT1_DCV = %.2f\n8.MPPT1_DCA = %.2f\n9.MPPT2_DCV = %.2f\n10.MPPT2_DCA = %.2f\n11.Ph1ACV = %.2f\n12.Ph1ACA = %.2f\n13.Ph2ACV = %.2f\n14.Ph2ACA = %.2f\n15.Ph3ACV = %.2f\n16.Ph3ACA = %.2f\n17.InvAC_P = %.2f\n18.Inv_Fr = %.2f\n19.Inv_Wh = %.2f\n20.Inv_Nrg = %.2f\n21.Inv_Rt = %d\n22.Inv_LE = %.2f\n23.Inv_Sts = %d\n24.Inv_Tpr = %.2f\n25.Inv_Err = %d\n26.Inv_Wrn = %d\n27.Inv_Fnflt = 0X%X\n28.Inv_StFlt = %s\n",datetime.day,datetime.month,datetime.year,datetime.hours,datetime.mins,dev_mac,rssi,id,serialno,pv1_vol,pv1_curr,pv2_vol,pv2_curr,ph1_vol,ph1_curr,ph2_vol,ph2_curr,ph3_vol,ph3_curr,ac_power,ph_freq,ac_power,today_energy,run_time,life_energy,run_status,inv_temp,error_code,warning_code,working_mode,str_status1);
             msg.msgId = DATA_ACQ_MSG;
             msg.data = data;
-            xQueueSend(loggerQueue_h, (void *) &msg, 0);
+            // msg.data = data100;
+            // xQueueSend(loggerQueue_h, (void *) &msg, 0);
             got_response =FALSE;
             memset(serialno, 0, sizeof(serialno));
             // memset(warning_code1, 0, sizeof(warning_code1));

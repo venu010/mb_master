@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/DELL/vs_esp/mb_master/main
+# Install script for directory: C:/Users/DELL/vs_esp/RMS_WiFi_Modbus_software_version1/main
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

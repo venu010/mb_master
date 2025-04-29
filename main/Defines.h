@@ -19,7 +19,7 @@
 #define TIMEZONE_OFFSET_MINUTES 30
 
 #define ENABLE_LED					0
-#define GOODWE                      1
+#define GOODWE                      0
 #define SUNGROW                     0
 #define SOLIS                       0
 // #define DELTA                       0
@@ -28,7 +28,7 @@
 #define SINENG_ELECTRIC             0
 #define HUAWEI                      0
 #define SCHNE_CL20_3P               0
-#define EMS                         0
+#define EMS                         1
 #define TESTING                     0
 
 
@@ -134,7 +134,7 @@ typedef enum {
 
 #define TIME_ZONE										("UTC-05:30")
 
-#define FLASH_FACTORY_BASE_ADDR							0x380000
+#define FLASH_FACTORY_BASE_ADDR							0x6D0000
 // Board data - generic - this will include things like, board id, server details, ntp details, ssid, etc.
 // #define DEV_CONFIG_ADDR									(FLASH_FACTORY_BASE_ADDR)
 // Project specific configuration details - this will include any calibration data

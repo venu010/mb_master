@@ -31,7 +31,7 @@ extern esp_mqtt_client_handle_t mqtt_client;
 extern uint8_t WIFI_CONNECT_STATUS;
 
 #define DATA_TIMER_COUNT 1000000*30
-#define POSTING_TIMER_COUNT 1000000*60*12
+#define POSTING_TIMER_COUNT 1000000*10 //1000000*60*12
 esp_timer_handle_t data_collect_timer;
 
 extern esp_err_t send_system_data(char *msg);
@@ -44,6 +44,7 @@ extern void inv_task();
 extern void flash_read(char *buff ,flash_sector_t sector);
 extern void flash_write(flash_sector_t sector, char *str);
 extern void https_with_url(char *msg);
+extern esp_err_t send_meas_data1(char *msg);
 extern void init_sntp_service();
 extern uint8_t MQ_status;
 extern uint8_t sntp_init_status;
@@ -53,6 +54,7 @@ extern uint8_t ems_read_status;
 
 uint8_t callback_status = FALSE;
 char contro_string[10];
+uint8_t inv_type = FALSE;
 
 void inverter_control(char *INV_CONTROL);
 
@@ -82,13 +84,19 @@ void logger_task() {
 			datetime.month = timeInfo->tm_mon+1;
 			datetime.year = timeInfo->tm_year+1900;
 			ESP_LOGI(TAG, "DATE time = %u-%u-%u %u:%u",datetime.day,datetime.month,datetime.year,datetime.hours,datetime.mins);
-			sprintf(data1, "{\"RDate\":\"%u-%u-%u %u:%u\"",datetime.day,datetime.month,datetime.year,datetime.hours,datetime.mins);
+			sprintf(data1, "{\"RDate\":\"%u-%u-%u %u:%u:%u\"",datetime.day,datetime.month,datetime.year,datetime.hours,datetime.mins,datetime.secs);
 			strcat(data1, ",");
 			strcat(data1,msg.data);
 			strcat(data1, "}");
+			#if (EMS)
+				if( sync_done == TRUE){
+					send_meas_data1(data1);
+				}
+			#else
 			if( sync_done == TRUE && (datetime.hours > 5 && datetime.hours < 19)){// sending data based on time
 				https_with_url(data1);
 			}
+			#endif
 		}
 	}
 	vQueueDelete(loggerQueue_h);
@@ -155,7 +163,7 @@ void collect_data_callback(){
     msg.data = data;	
 	call_bk ++;
 	printf("callback_collect =%d\n ",call_bk);
-	if(MQ_status == DISCONNECTED && mqtt_status == DISCONNECTED){
+	if(MQ_status == DISCONNECTED && mqtt_status == DISCONNECTED ){
 		printf("mqtt disconnected................................\n");
 		esp_mqtt_client_reconnect(mqtt_client);
 	}
